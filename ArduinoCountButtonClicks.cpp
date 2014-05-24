@@ -1,7 +1,8 @@
 #include <Arduino.h>
 #include "CountingButtons.h"
 
-// The main class. One instance will be created in the program
+// The main class is a singleton class.
+// see README.md in project for documentation.
 class CCountButtonClicks {
 private:
 	CCountingButtons &m_CountButton;
@@ -9,10 +10,16 @@ private:
 
 	// clear reset and count button after user clicked reset button
 	void resetButtons();
+	// the constructor to initialize things is private
+	CCountButtonClicks();
+	// forbid copy
+	CCountButtonClicks(const CCountButtonClicks &);
+
 
 public:
-	// the constructor to initialize things
-	CCountButtonClicks();
+	// static method to create an instance
+	static CCountButtonClicks &instance();
+
 	// do things
 	void doit();
 };
@@ -42,6 +49,12 @@ CCountButtonClicks::CCountButtonClicks() :
 	pinMode(11, OUTPUT);
 }
 
+CCountButtonClicks &CCountButtonClicks::instance()
+{
+	static CCountButtonClicks instance;
+	return instance;
+}
+
 void CCountButtonClicks::doit()
 {
 	// reset button clicked at least one time
@@ -50,8 +63,8 @@ void CCountButtonClicks::doit()
 	}
 	// read value, convert to binary form and show with LEDs (pin 8 is highest value)
 	int value = m_CountButton.getValue();
-	for(int i=3; i>=0; --i){
-		digitalWrite(11-i, (((value >> i) & 1 == 0) ? LOW : HIGH));
+	for(int i=0; i<4; ++i){
+		digitalWrite(11-i, ((((value >> i) & 1) == 0) ? LOW : HIGH));
 	}
 }
 
@@ -61,13 +74,11 @@ int main(void)
 	init();
 
 	// create instance
-	CCountButtonClicks app;
+	CCountButtonClicks &app = CCountButtonClicks::instance();
 
 	while (true)
 	{
 		app.doit();
-		// this delay is for testing: instead, a longer calculation could take place here
-		delay(200);
 	}
 	return 0; // never reached
 }
